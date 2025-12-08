@@ -7,7 +7,7 @@ import { ComparisonModal } from './components/ComparisonModal';
 import { OnboardingTour } from './components/OnboardingTour';
 import { AdMobBanner } from './components/AdMobBanner';
 import { AdMobInterstitial } from './components/AdMobInterstitial';
-import { Rocket, Sparkles, RefreshCw, BarChart3, Info, Heart, Bookmark, Filter, ArrowUpDown, Scale, X, Activity, Loader2, HelpCircle, Share2, CheckCircle2, PenTool, Zap, Sun, Moon, Download, FileJson, FileText, ChevronDown } from 'lucide-react';
+import { Rocket, Sparkles, RefreshCw, BarChart3, Info, Heart, Bookmark, Filter, ArrowUpDown, Scale, X, Activity, Loader2, HelpCircle, Share2, CheckCircle2, PenTool, Zap, Sun, Moon, Download, FileJson, FileText, ChevronDown, FileSpreadsheet } from 'lucide-react';
 import { jsPDF } from "jspdf";
 
 const CATEGORIES = [
@@ -337,6 +337,56 @@ export default function App() {
     showToast("JSON Exported");
   }, [processedIdeas, showToast]);
 
+  const handleExportCSV = useCallback(() => {
+    if (processedIdeas.length === 0) return;
+
+    // Define headers
+    const headers = [
+      "Title",
+      "Tagline",
+      "Category",
+      "Description",
+      "Viral Mechanic",
+      "Monetization Strategy",
+      "Est. Year 1 Users",
+      "Virality Score",
+      "Ad Revenue Potential",
+      "Image URL"
+    ];
+
+    // Map data to rows
+    const rows = processedIdeas.map(idea => [
+      `"${idea.title.replace(/"/g, '""')}"`,
+      `"${idea.tagline.replace(/"/g, '""')}"`,
+      `"${idea.category}"`,
+      `"${idea.description.replace(/"/g, '""')}"`,
+      `"${idea.viralMechanic.replace(/"/g, '""')}"`,
+      `"${idea.monetizationStrategy.replace(/"/g, '""')}"`,
+      idea.estimatedYearOneUsers,
+      idea.viralityScore,
+      idea.adRevenuePotential,
+      `"${idea.imageUrl || ''}"`
+    ]);
+
+    // Combine headers and rows
+    const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.join(','))
+    ].join('\n');
+
+    // Create download link
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'strategia-x-ideas.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setShowExportMenu(false);
+    showToast("CSV Exported");
+  }, [processedIdeas, showToast]);
+
   const handleExportPDF = useCallback(() => {
     try {
         const doc = new jsPDF();
@@ -663,6 +713,13 @@ export default function App() {
                             >
                                 <FileJson size={14} className="text-yellow-600 dark:text-yellow-500" />
                                 Export JSON
+                            </button>
+                            <button
+                                onClick={handleExportCSV}
+                                className="w-full text-left px-3 py-2 text-xs font-bold uppercase flex items-center gap-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 transition-colors"
+                            >
+                                <FileSpreadsheet size={14} className="text-green-600 dark:text-green-500" />
+                                Export CSV
                             </button>
                             <button
                                 onClick={handleExportPDF}
