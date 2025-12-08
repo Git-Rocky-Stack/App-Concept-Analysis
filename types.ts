@@ -9,6 +9,7 @@ export interface AppIdea {
   estimatedYearOneUsers: number;
   viralityScore: number; // 0-100
   adRevenuePotential: number; // 0-100
+  imageUrl?: string;
 }
 
 export interface GrowthDataPoint {

@@ -23,6 +23,22 @@ const ideaSchema: Schema = {
   },
 };
 
+const singleIdeaSchema: Schema = {
+  type: Type.OBJECT,
+  properties: {
+    title: { type: Type.STRING },
+    tagline: { type: Type.STRING },
+    description: { type: Type.STRING },
+    category: { type: Type.STRING },
+    viralMechanic: { type: Type.STRING },
+    monetizationStrategy: { type: Type.STRING },
+    estimatedYearOneUsers: { type: Type.INTEGER },
+    viralityScore: { type: Type.INTEGER },
+    adRevenuePotential: { type: Type.INTEGER },
+  },
+  required: ["title", "tagline", "description", "category", "viralMechanic", "monetizationStrategy", "estimatedYearOneUsers", "viralityScore", "adRevenuePotential"],
+};
+
 const analysisSchema: Schema = {
   type: Type.OBJECT,
   properties: {
@@ -83,6 +99,44 @@ export const generateViralIdeas = async (category: AppCategory | "All"): Promise
   }
 };
 
+export const refineUserIdea = async (userInput: string): Promise<AppIdea | null> => {
+  const prompt = `
+    Analyze and refine the following raw app idea into a structured business concept:
+    "${userInput}"
+
+    Optimize it for a "Free + Ads" revenue model.
+    Generate a catchy title and tagline.
+    Identify the best category.
+    Design a specific viral mechanic (how users invite others).
+    Estimate potential year one users (be realistic based on the idea's viral potential).
+    Score virality and ad revenue potential (0-100).
+    If the input is too vague, invent plausible details to make it a viable viral app.
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: singleIdeaSchema,
+        temperature: 0.7,
+      },
+    });
+
+    const data = JSON.parse(response.text || "null");
+    if (!data) return null;
+
+    return {
+      ...data,
+      id: `custom-${Date.now()}`,
+    };
+  } catch (error) {
+    console.error("Error refining user idea:", error);
+    return null;
+  }
+};
+
 export const analyzeAppIdea = async (idea: AppIdea): Promise<DeepDiveAnalysis | null> => {
   const prompt = `
     Analyze the following app idea for market viability, specifically focusing on a "Free + Ads" revenue model.
@@ -109,6 +163,40 @@ export const analyzeAppIdea = async (idea: AppIdea): Promise<DeepDiveAnalysis | 
     return JSON.parse(response.text || "null");
   } catch (error) {
     console.error("Error analyzing idea:", error);
+    return null;
+  }
+};
+
+export const generateAppConceptImage = async (idea: AppIdea): Promise<string | null> => {
+  const prompt = `
+    Create a sleek, modern, and futuristic app store featured image (thumbnail) for an app named "${idea.title}".
+    Tagline: ${idea.tagline}.
+    App Category: ${idea.category}.
+    Visual Style: Minimalist, high-tech, vibrant gradients, digital art, 4k resolution.
+    Avoid text other than the logo or symbolic elements.
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash-image',
+      contents: {
+        parts: [{ text: prompt }],
+      },
+      config: {
+        imageConfig: {
+            aspectRatio: "16:9",
+        }
+      }
+    });
+
+    for (const part of response.candidates?.[0]?.content?.parts || []) {
+      if (part.inlineData) {
+        return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+      }
+    }
+    return null;
+  } catch (error) {
+    console.error("Error generating app image:", error);
     return null;
   }
 };
