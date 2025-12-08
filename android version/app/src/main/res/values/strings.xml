@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Strategia-X</string>
+    <string name="app_description">AI-Powered Viral App Architect</string>
+
+    <!-- Loading states -->
+    <string name="loading">Loading…</string>
+    <string name="loading_app">Loading Strategia-X…</string>
+
+    <!-- Error messages -->
+    <string name="error_no_internet">No internet connection</string>
+    <string name="error_loading_failed">Failed to load. Please try again.</string>
+    <string name="error_generic">Something went wrong</string>
+
+    <!-- Actions -->
+    <string name="action_retry">Try Again</string>
+    <string name="action_share">Share</string>
+    <string name="action_close">Close</string>
+
+    <!-- Content descriptions for accessibility -->
+    <string name="cd_app_logo">Strategia-X Logo</string>
+    <string name="cd_loading">Loading content</string>
+    <string name="cd_advertisement">Advertisement</string>
+</resources>

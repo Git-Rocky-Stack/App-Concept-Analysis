@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary Brand Colors -->
+    <color name="primary">#F59E0B</color>
+    <color name="primary_variant">#D97706</color>
+    <color name="primary_dark">#B45309</color>
+    <color name="on_primary">#0F172A</color>
+
+    <!-- Secondary Colors -->
+    <color name="secondary">#3B82F6</color>
+    <color name="secondary_variant">#2563EB</color>
+    <color name="on_secondary">#FFFFFF</color>
+
+    <!-- Background Colors (Dark Theme) -->
+    <color name="background">#0F172A</color>
+    <color name="background_secondary">#1E293B</color>
+    <color name="surface">#1E293B</color>
+    <color name="surface_variant">#334155</color>
+
+    <!-- On Background/Surface -->
+    <color name="on_background">#F1F5F9</color>
+    <color name="on_surface">#F1F5F9</color>
+    <color name="on_surface_variant">#94A3B8</color>
+
+    <!-- Status Colors -->
+    <color name="success">#10B981</color>
+    <color name="warning">#F59E0B</color>
+    <color name="error">#EF4444</color>
+    <color name="info">#3B82F6</color>
+
+    <!-- Standard Colors -->
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+
+    <!-- Status Bar -->
+    <color name="status_bar">#0F172A</color>
+    <color name="navigation_bar">#0F172A</color>
+
+    <!-- Splash Screen -->
+    <color name="splash_background">#0F172A</color>
+</resources>
