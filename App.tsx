@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { generateViralIdeas, analyzeAppIdea, refineUserIdea, generateAppConceptImage } from './services/geminiService';
+import { generateViralIdeas, analyzeAppIdea, refineUserIdea, generateAppConceptImage, setProgressCallback, preloadEngine, isEngineReady } from './services/webLLMService';
 import { AppIdea, AppCategory, DeepDiveAnalysis } from './types';
 import { IdeaCard } from './components/IdeaCard';
 import { AnalysisView } from './components/AnalysisView';
@@ -28,6 +28,10 @@ export default function App() {
     }
     return 'dark';
   });
+
+  // WebLLM Model Loading State
+  const [modelLoading, setModelLoading] = useState(!isEngineReady());
+  const [modelProgress, setModelProgress] = useState("Initializing AI engine...");
 
   const [mode, setMode] = useState<'generate' | 'validate'>('generate');
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
@@ -78,6 +82,23 @@ export default function App() {
     root.classList.add(theme);
     localStorage.setItem('theme', theme);
   }, [theme]);
+
+  // Initialize WebLLM Engine on app load
+  useEffect(() => {
+    setProgressCallback((progress) => {
+      setModelProgress(progress);
+      if (progress.includes("ready")) {
+        setModelLoading(false);
+      }
+    });
+
+    preloadEngine()
+      .then(() => setModelLoading(false))
+      .catch((err) => {
+        console.error("Failed to load AI model:", err);
+        setModelProgress("Failed to load AI model. Please refresh.");
+      });
+  }, []);
 
   const toggleTheme = () => {
     setTheme(prev => prev === 'dark' ? 'light' : 'dark');
@@ -462,6 +483,29 @@ export default function App() {
       {/* Native Ad Interstitial Overlay */}
       <AdMobInterstitial isOpen={showInterstitial} onClose={handleInterstitialClose} />
 
+      {/* WebLLM Model Loading Overlay */}
+      {modelLoading && (
+        <div className="fixed inset-0 z-[200] bg-black/95 flex flex-col items-center justify-center">
+          <div className="text-center max-w-md px-6">
+            <div className="w-20 h-20 mx-auto mb-8 relative">
+              <div className="absolute inset-0 border-4 border-red-600/30 rounded-full"></div>
+              <div className="absolute inset-0 border-4 border-transparent border-t-red-600 rounded-full animate-spin"></div>
+              <Sparkles className="absolute inset-0 m-auto text-red-600" size={28} />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-4 uppercase tracking-wider">Loading AI Engine</h2>
+            <p className="text-neutral-400 text-sm mb-6">
+              Downloading AI model to your browser. This only happens once and enables completely free, offline AI analysis.
+            </p>
+            <div className="bg-neutral-900 rounded-xl p-4 border border-neutral-800">
+              <p className="text-red-500 text-xs font-mono">{modelProgress}</p>
+            </div>
+            <p className="text-neutral-600 text-xs mt-6">
+              First load: ~2GB download | Subsequent visits: Instant
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Toast Notification */}
       <div className={`fixed bottom-8 left-1/2 -translate-x-1/2 z-[110] transition-all duration-300 transform ${toastMessage ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
          <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-900 dark:text-white px-6 py-3 rounded-full shadow-[0_10px_40px_rgba(0,0,0,0.5)] flex items-center gap-3">
@@ -494,7 +538,7 @@ export default function App() {
 
           {/* Right Actions */}
           <div className="flex-1 flex items-center justify-end gap-6 text-sm">
-             <span className="hidden sm:inline text-neutral-500 font-mono text-xs tracking-wider">GEN 2.5 ENABLED</span>
+             <span className="hidden sm:inline text-neutral-500 font-mono text-xs tracking-wider">LOCAL AI ENABLED</span>
              <div className="w-px h-4 bg-neutral-200 dark:bg-neutral-800 hidden sm:block"></div>
              
              <button onClick={toggleTheme} className="text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors" title="Toggle Theme">
