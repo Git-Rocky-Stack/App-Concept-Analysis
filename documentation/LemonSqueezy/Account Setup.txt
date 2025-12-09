@@ -1,0 +1,52 @@
+LemonSqueezy Setup (10 minutes)
+1. Create Your Store
+Go to https://lemonsqueezy.com → Sign up free
+Settings → Store → Create store name (e.g., "Strategia-X")
+Settings → Payments → Connect Stripe or PayPal
+2. Create Your Product
+Products → + New Product
+
+Configure:
+
+Field	Value
+Name	Strategia-X Pro License
+Description	Unlock unlimited generations, analysis, exports & more
+Price	$29 (or your price)
+Payment type	One-time
+License keys tab → Enable license keys
+
+Activation limit: 3 (allows 3 devices)
+Click Publish
+
+3. Get Your Checkout URL
+Click on your published product
+Share button → Copy the Checkout link
+It looks like: https://strategia-x.lemonsqueezy.com/buy/abc123xyz
+4. Update Your Code
+Edit services/licenseService.ts line 38:
+
+export const LEMONSQUEEZY_CHECKOUT_URL = 'https://strategia-x.lemonsqueezy.com/buy/YOUR-ACTUAL-PRODUCT-ID';
+
+How It Works (User Flow)
+User clicks "Upgrade" → Opens LemonSqueezy checkout
+User pays → LemonSqueezy emails them a license key
+User enters key in app → Stored locally → Pro unlocked!
+Testing Your Setup
+Before going live:
+
+In LemonSqueezy, enable Test Mode
+Use test card: 4242 4242 4242 4242
+Complete a test purchase
+Enter the test license key in your app
+Optional: Custom License Key Format
+If you want keys like STGX-XXXX-XXXX-XXXX instead of LemonSqueezy's default UUID format:
+
+In LemonSqueezy → Product → License Keys
+Key format → Custom
+Set pattern: STGX-{XXXX}-{XXXX}-{XXXX}
+Summary of Changes Pushed
+File	Change
+licenseService.ts	Added LemonSqueezy config docs, flexible key validation
+LicenseModal.tsx	Updated placeholder text
+Your branch is ready to merge! Would you like me to help with anything else, like customizing the pricing display or adding more features?
+
