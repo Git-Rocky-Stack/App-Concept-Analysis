@@ -24,11 +24,31 @@ export interface UsageData {
   savedIdeasCount: number;
 }
 
-// LemonSqueezy Store URL - Update this with your actual store
-export const LEMONSQUEEZY_CHECKOUT_URL = 'https://strategia-x.lemonsqueezy.com/checkout';
+/**
+ * LemonSqueezy Configuration
+ *
+ * To set up:
+ * 1. Create account at https://lemonsqueezy.com
+ * 2. Create a product with "License key" type
+ * 3. Copy your checkout URL from Product → Share → Checkout URL
+ * 4. Replace the URL below with your actual checkout URL
+ *
+ * Example URL format: https://your-store.lemonsqueezy.com/buy/abc123xyz
+ */
+export const LEMONSQUEEZY_CHECKOUT_URL = 'https://strategia-x.lemonsqueezy.com/buy/YOUR-PRODUCT-ID';
 
-// License key format validation (STGX-XXXX-XXXX-XXXX)
-const LICENSE_REGEX = /^STGX-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/;
+// Your store name (for display purposes)
+export const STORE_NAME = 'Strategia-X';
+
+/**
+ * License key format validation
+ *
+ * Accepts multiple formats:
+ * - LemonSqueezy default: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX (UUID-like)
+ * - Custom format: STGX-XXXX-XXXX-XXXX
+ * - Any alphanumeric key with at least 16 characters
+ */
+const LICENSE_REGEX = /^([A-Z0-9]{8}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{12}|STGX-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}|[A-Z0-9-]{16,})$/i;
 
 /**
  * Validate license key format
@@ -83,7 +103,7 @@ export const activateLicense = async (key: string, email?: string): Promise<{ su
   if (!isValidKeyFormat(normalizedKey)) {
     return {
       success: false,
-      error: 'Invalid license key format. Expected: STGX-XXXX-XXXX-XXXX'
+      error: 'Invalid license key. Please enter the key from your purchase email.'
     };
   }
 

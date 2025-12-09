@@ -169,7 +169,7 @@ export const LicenseModal: React.FC<LicenseModalProps> = ({ isOpen, onClose }) =
                       type="text"
                       value={licenseKey}
                       onChange={(e) => setLicenseKey(e.target.value.toUpperCase())}
-                      placeholder="STGX-XXXX-XXXX-XXXX"
+                      placeholder="Enter your license key"
                       className="w-full pl-10 pr-4 py-3 bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl text-neutral-900 dark:text-white placeholder-neutral-400 text-sm font-mono uppercase tracking-wider focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600 transition-colors"
                     />
                   </div>
