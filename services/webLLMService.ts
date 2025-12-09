@@ -1,5 +1,5 @@
 import * as webllm from "@mlc-ai/web-llm";
-import { AppIdea, AppCategory, DeepDiveAnalysis } from "../types";
+import { AppIdea, AppCategory, DeepDiveAnalysis, GeneratedAppNames, MarketingCopy, MVPPlan, MVPFeature } from "../types";
 
 // Model configuration - using a capable but reasonably-sized model
 const MODEL_ID = "Llama-3.2-3B-Instruct-q4f16_1-MLC";
@@ -295,6 +295,221 @@ export const generateAppConceptImage = async (idea: AppIdea): Promise<string | n
     // Return URL anyway - browser will handle loading
     const fallbackPrompt = encodeURIComponent(`Modern app icon ${idea.title} digital art gradient`);
     return `https://image.pollinations.ai/prompt/${fallbackPrompt}?width=1280&height=720&nologo=true`;
+  }
+};
+
+// ============ NEW CREATIVE FEATURES ============
+
+// Generate creative app names
+export const generateAppNames = async (idea: AppIdea): Promise<GeneratedAppNames | null> => {
+  const prompt = `You are a creative branding expert. Generate 10 unique app names for this concept:
+
+App Concept: ${idea.title}
+Description: ${idea.description}
+Category: ${idea.category}
+
+Generate names in different styles:
+- 2 Playful/Fun names (catchy, memorable)
+- 2 Professional/Corporate names (trustworthy, sleek)
+- 2 Techy/Modern names (innovative, cutting-edge)
+- 2 Minimalist names (short, simple, 1-2 syllables)
+- 2 Creative/Abstract names (unique, brandable)
+
+IMPORTANT: Respond ONLY with valid JSON, no other text. Format:
+{
+  "names": [
+    {"name": "AppName", "style": "Playful", "available": true},
+    {"name": "AnotherName", "style": "Professional", "available": false}
+  ]
+}
+
+For "available", randomly assign true/false to simulate domain availability check.
+JSON only:`;
+
+  try {
+    const llm = await getEngine();
+
+    const response = await llm.chat.completions.create({
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.9,
+      max_tokens: 1500,
+    });
+
+    const content = response.choices[0]?.message?.content || "";
+    const data = extractJSON<{ names: Array<{ name: string; style: string; available: boolean }> }>(content);
+
+    if (!data || !Array.isArray(data.names)) {
+      console.error("Failed to parse app names response");
+      return null;
+    }
+
+    return {
+      names: data.names.map(n => ({
+        name: String(n.name || "AppName"),
+        style: String(n.style || "Creative"),
+        available: Boolean(n.available),
+      })),
+    };
+  } catch (error) {
+    console.error("Error generating app names:", error);
+    return null;
+  }
+};
+
+// Generate marketing copy
+export const generateMarketingCopy = async (idea: AppIdea): Promise<MarketingCopy | null> => {
+  const prompt = `You are an expert app marketing copywriter. Create compelling marketing materials for this app:
+
+App: ${idea.title}
+Tagline: ${idea.tagline}
+Description: ${idea.description}
+Category: ${idea.category}
+Viral Mechanic: ${idea.viralMechanic}
+
+Generate:
+1. App Store description (short 80-char version AND full 500-word version)
+2. 5 catchy taglines/slogans
+3. Social media posts (Twitter 280 chars, Instagram caption, LinkedIn professional post)
+4. Short press release paragraph (100 words)
+
+IMPORTANT: Respond ONLY with valid JSON, no other text. Format:
+{
+  "appStoreDescription": {
+    "short": "80 character short description here",
+    "full": "Full detailed app store description here (2-3 paragraphs)"
+  },
+  "taglines": [
+    "Catchy tagline 1",
+    "Catchy tagline 2",
+    "Catchy tagline 3",
+    "Catchy tagline 4",
+    "Catchy tagline 5"
+  ],
+  "socialPosts": {
+    "twitter": "Engaging tweet with emoji and hashtags (280 chars max)",
+    "instagram": "Instagram caption with emojis and call-to-action",
+    "linkedIn": "Professional LinkedIn announcement post"
+  },
+  "pressRelease": "Short press release paragraph announcing the app launch"
+}
+
+JSON only:`;
+
+  try {
+    const llm = await getEngine();
+
+    const response = await llm.chat.completions.create({
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.8,
+      max_tokens: 2500,
+    });
+
+    const content = response.choices[0]?.message?.content || "";
+    const data = extractJSON<Record<string, unknown>>(content);
+
+    if (!data) {
+      console.error("Failed to parse marketing copy response");
+      return null;
+    }
+
+    const appStoreDesc = data.appStoreDescription as { short?: string; full?: string } | undefined;
+    const socialPosts = data.socialPosts as { twitter?: string; instagram?: string; linkedIn?: string } | undefined;
+    const taglines = data.taglines as string[] | undefined;
+
+    return {
+      appStoreDescription: {
+        short: String(appStoreDesc?.short || `${idea.title} - ${idea.tagline}`).slice(0, 80),
+        full: String(appStoreDesc?.full || idea.description),
+      },
+      taglines: Array.isArray(taglines) ? taglines.map(String).slice(0, 5) : [idea.tagline],
+      socialPosts: {
+        twitter: String(socialPosts?.twitter || `Check out ${idea.title}! ${idea.tagline} #app #new`),
+        instagram: String(socialPosts?.instagram || `Introducing ${idea.title}! ${idea.description}`),
+        linkedIn: String(socialPosts?.linkedIn || `Excited to announce ${idea.title} - ${idea.description}`),
+      },
+      pressRelease: String(data.pressRelease || `${idea.title} launches today, offering ${idea.description}`),
+    };
+  } catch (error) {
+    console.error("Error generating marketing copy:", error);
+    return null;
+  }
+};
+
+// Generate MVP feature plan
+export const generateMVPPlan = async (idea: AppIdea): Promise<MVPPlan | null> => {
+  const prompt = `You are an expert product manager. Create an MVP feature plan for this app:
+
+App: ${idea.title}
+Description: ${idea.description}
+Category: ${idea.category}
+Monetization: ${idea.monetizationStrategy}
+Viral Mechanic: ${idea.viralMechanic}
+
+Prioritize features using MoSCoW method:
+- Must Have: Core features essential for launch (4-5 features)
+- Should Have: Important but not critical (3-4 features)
+- Nice to Have: Future enhancements (3-4 features)
+
+For each feature, estimate effort (Low/Medium/High) and impact (Low/Medium/High).
+Also suggest a tech stack and estimated weeks for MVP.
+
+IMPORTANT: Respond ONLY with valid JSON, no other text. Format:
+{
+  "mustHave": [
+    {"name": "Feature Name", "description": "Brief description", "effort": "Medium", "impact": "High"}
+  ],
+  "shouldHave": [
+    {"name": "Feature Name", "description": "Brief description", "effort": "Low", "impact": "Medium"}
+  ],
+  "niceToHave": [
+    {"name": "Feature Name", "description": "Brief description", "effort": "High", "impact": "Low"}
+  ],
+  "estimatedMVPWeeks": 8,
+  "techStack": ["React Native", "Firebase", "Node.js"]
+}
+
+JSON only:`;
+
+  try {
+    const llm = await getEngine();
+
+    const response = await llm.chat.completions.create({
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.7,
+      max_tokens: 2500,
+    });
+
+    const content = response.choices[0]?.message?.content || "";
+    const data = extractJSON<Record<string, unknown>>(content);
+
+    if (!data) {
+      console.error("Failed to parse MVP plan response");
+      return null;
+    }
+
+    const parseFeatures = (features: unknown): MVPFeature[] => {
+      if (!Array.isArray(features)) return [];
+      return features.map(f => {
+        const feature = f as Record<string, unknown>;
+        return {
+          name: String(feature.name || "Feature"),
+          description: String(feature.description || ""),
+          effort: (['Low', 'Medium', 'High'].includes(String(feature.effort)) ? String(feature.effort) : 'Medium') as 'Low' | 'Medium' | 'High',
+          impact: (['Low', 'Medium', 'High'].includes(String(feature.impact)) ? String(feature.impact) : 'Medium') as 'Low' | 'Medium' | 'High',
+        };
+      });
+    };
+
+    return {
+      mustHave: parseFeatures(data.mustHave),
+      shouldHave: parseFeatures(data.shouldHave),
+      niceToHave: parseFeatures(data.niceToHave),
+      estimatedMVPWeeks: Number(data.estimatedMVPWeeks) || 8,
+      techStack: Array.isArray(data.techStack) ? data.techStack.map(String) : ['React Native', 'Firebase'],
+    };
+  } catch (error) {
+    console.error("Error generating MVP plan:", error);
+    return null;
   }
 };
 

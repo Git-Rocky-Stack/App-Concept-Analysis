@@ -36,3 +36,43 @@ export enum AppCategory {
   HealthWellness = "Health & Wellness",
   Entertainment = "Entertainment"
 }
+
+// App Name Generator
+export interface GeneratedAppNames {
+  names: {
+    name: string;
+    style: string; // e.g., "Playful", "Professional", "Techy"
+    available: boolean; // Simulated availability
+  }[];
+}
+
+// Marketing Copy Writer
+export interface MarketingCopy {
+  appStoreDescription: {
+    short: string; // 80 chars
+    full: string; // Full description
+  };
+  taglines: string[]; // 5 catchy taglines
+  socialPosts: {
+    twitter: string;
+    instagram: string;
+    linkedIn: string;
+  };
+  pressRelease: string; // Short press release paragraph
+}
+
+// MVP Feature Planner
+export interface MVPFeature {
+  name: string;
+  description: string;
+  effort: 'Low' | 'Medium' | 'High';
+  impact: 'Low' | 'Medium' | 'High';
+}
+
+export interface MVPPlan {
+  mustHave: MVPFeature[];
+  shouldHave: MVPFeature[];
+  niceToHave: MVPFeature[];
+  estimatedMVPWeeks: number;
+  techStack: string[];
+}
