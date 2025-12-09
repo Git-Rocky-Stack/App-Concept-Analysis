@@ -7,7 +7,10 @@ import { ComparisonModal } from './components/ComparisonModal';
 import { OnboardingTour } from './components/OnboardingTour';
 import { AdMobBanner } from './components/AdMobBanner';
 import { AdMobInterstitial } from './components/AdMobInterstitial';
-import { Rocket, Sparkles, RefreshCw, BarChart3, Info, Heart, Bookmark, Filter, ArrowUpDown, Scale, X, Activity, Loader2, HelpCircle, Share2, CheckCircle2, PenTool, Zap, Sun, Moon, Download, FileJson, FileText, ChevronDown, FileSpreadsheet } from 'lucide-react';
+import { LicenseModal } from './components/LicenseModal';
+import { UpgradePrompt } from './components/UpgradePrompt';
+import { LicenseProvider, useLicense } from './contexts/LicenseContext';
+import { Rocket, Sparkles, RefreshCw, BarChart3, Info, Heart, Bookmark, Filter, ArrowUpDown, Scale, X, Activity, Loader2, HelpCircle, Share2, CheckCircle2, PenTool, Zap, Sun, Moon, Download, FileJson, FileText, ChevronDown, FileSpreadsheet, Crown } from 'lucide-react';
 import { jsPDF } from "jspdf";
 
 const CATEGORIES = [
@@ -19,7 +22,23 @@ const CATEGORIES = [
   AppCategory.Entertainment
 ];
 
-export default function App() {
+function AppContent() {
+  // License Context
+  const {
+    isPro,
+    canGenerate,
+    canSave,
+    recordGeneration,
+    hasFeature,
+    remainingGenerations,
+    showLicenseModal,
+    setShowLicenseModal,
+    showUpgradePrompt,
+    setShowUpgradePrompt,
+    upgradePromptFeature,
+    setUpgradePromptFeature
+  } = useLicense();
+
   // Theme State
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     if (typeof window !== 'undefined') {
@@ -192,14 +211,28 @@ export default function App() {
     setSavedIdeas(prev => {
       const exists = prev.find(i => i.id === idea.id);
       if (exists) {
+        // Always allow unsaving
         return prev.filter(i => i.id !== idea.id);
       } else {
+        // Check save limit for free users
+        if (!canSave(prev.length)) {
+          setUpgradePromptFeature('unlimited_saves');
+          setShowUpgradePrompt(true);
+          return prev;
+        }
         return [...prev, idea];
       }
     });
-  }, []);
+  }, [canSave, setUpgradePromptFeature, setShowUpgradePrompt]);
 
   const toggleComparison = useCallback((idea: AppIdea) => {
+    // Comparison requires pro
+    if (!hasFeature('comparison')) {
+      setUpgradePromptFeature('comparison');
+      setShowUpgradePrompt(true);
+      return;
+    }
+
     setComparisonQueue(prev => {
         const exists = prev.find(i => i.id === idea.id);
         if (exists) {
@@ -209,13 +242,20 @@ export default function App() {
             return [...prev, idea];
         }
     });
-  }, []);
+  }, [hasFeature, setUpgradePromptFeature, setShowUpgradePrompt]);
 
   const clearComparison = useCallback(() => {
     setComparisonQueue([]);
   }, []);
 
   const handleGenerateIdeas = useCallback(async () => {
+    // Check generation limit for free users
+    if (!canGenerate()) {
+      setUpgradePromptFeature('unlimited_generations');
+      setShowUpgradePrompt(true);
+      return;
+    }
+
     if (window.location.hash) {
         window.history.pushState("", document.title, window.location.pathname + window.location.search);
     }
@@ -231,11 +271,21 @@ export default function App() {
     const generatedIdeas = await generateViralIdeas(selectedCategory as AppCategory | "All");
     setIdeas(generatedIdeas);
     setLoadingIdeas(false);
-  }, [selectedCategory]);
+
+    // Record generation for free tier tracking
+    recordGeneration();
+  }, [selectedCategory, canGenerate, recordGeneration, setUpgradePromptFeature, setShowUpgradePrompt]);
 
   const handleGenerateImage = useCallback(async (idea: AppIdea) => {
+    // Check if user has image generation feature
+    if (!hasFeature('image_generation')) {
+      setUpgradePromptFeature('image_generation');
+      setShowUpgradePrompt(true);
+      return;
+    }
+
     setGeneratingImages(prev => ({ ...prev, [idea.id]: true }));
-    
+
     const imageUrl = await generateAppConceptImage(idea);
     
     if (imageUrl) {
@@ -256,10 +306,24 @@ export default function App() {
     }
 
     setGeneratingImages(prev => ({ ...prev, [idea.id]: false }));
-  }, [selectedIdea, showToast]);
+  }, [selectedIdea, showToast, hasFeature, setUpgradePromptFeature, setShowUpgradePrompt]);
 
   const handleValidateCustomIdea = useCallback(async () => {
     if (!userContext.trim()) return;
+
+    // Check generation limit for free users
+    if (!canGenerate()) {
+      setUpgradePromptFeature('unlimited_generations');
+      setShowUpgradePrompt(true);
+      return;
+    }
+
+    // Deep analysis requires pro
+    if (!hasFeature('deep_analysis')) {
+      setUpgradePromptFeature('deep_analysis');
+      setShowUpgradePrompt(true);
+      return;
+    }
 
     if (window.location.hash) {
         window.history.pushState("", document.title, window.location.pathname + window.location.search);
@@ -271,29 +335,32 @@ export default function App() {
     setAnalysis(null);
     setActiveTab('generated');
     setFilterCategory("All");
-    
+
     const refinedIdea = await refineUserIdea(userContext);
-    
+
     if (refinedIdea) {
         setIdeas([refinedIdea]);
         setSelectedIdea(refinedIdea);
-        
+
         setLoadingAnalysis(true);
         if (window.innerWidth < 1024) {
              setTimeout(() => {
                  document.getElementById('analysis-section')?.scrollIntoView({ behavior: 'smooth' });
              }, 100);
         }
-        
+
         const result = await analyzeAppIdea(refinedIdea);
         setAnalysis(result);
         setLoadingAnalysis(false);
+
+        // Record generation
+        recordGeneration();
     } else {
         showToast("Could not process idea. Try again.");
     }
-    
+
     setLoadingIdeas(false);
-  }, [userContext, showToast]);
+  }, [userContext, showToast, canGenerate, hasFeature, recordGeneration, setUpgradePromptFeature, setShowUpgradePrompt]);
 
   const executeAnalysis = useCallback(async (idea: AppIdea) => {
     setSelectedIdea(idea);
@@ -314,10 +381,17 @@ export default function App() {
   const handleAnalyzeClick = useCallback((idea: AppIdea) => {
       if (selectedIdea?.id === idea.id) return;
 
+      // Deep analysis requires pro
+      if (!hasFeature('deep_analysis')) {
+        setUpgradePromptFeature('deep_analysis');
+        setShowUpgradePrompt(true);
+        return;
+      }
+
       // Trigger Interstitial Ad
       setPendingAnalysisIdea(idea);
       setShowInterstitial(true);
-  }, [selectedIdea]);
+  }, [selectedIdea, hasFeature, setUpgradePromptFeature, setShowUpgradePrompt]);
 
   const handleInterstitialClose = useCallback(() => {
       setShowInterstitial(false);
@@ -347,6 +421,14 @@ export default function App() {
   }, [ideas, savedIdeas, activeTab, filterCategory, sortOption]);
 
   const handleExportJSON = useCallback(() => {
+    // Export requires pro
+    if (!hasFeature('export')) {
+      setUpgradePromptFeature('export');
+      setShowUpgradePrompt(true);
+      setShowExportMenu(false);
+      return;
+    }
+
     const dataStr = JSON.stringify(processedIdeas, null, 2);
     const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
     const exportFileDefaultName = 'strategia-x-ideas.json';
@@ -356,9 +438,17 @@ export default function App() {
     linkElement.click();
     setShowExportMenu(false);
     showToast("JSON Exported");
-  }, [processedIdeas, showToast]);
+  }, [processedIdeas, showToast, hasFeature, setUpgradePromptFeature, setShowUpgradePrompt]);
 
   const handleExportCSV = useCallback(() => {
+    // Export requires pro
+    if (!hasFeature('export')) {
+      setUpgradePromptFeature('export');
+      setShowUpgradePrompt(true);
+      setShowExportMenu(false);
+      return;
+    }
+
     if (processedIdeas.length === 0) return;
 
     // Define headers
@@ -406,9 +496,17 @@ export default function App() {
     document.body.removeChild(link);
     setShowExportMenu(false);
     showToast("CSV Exported");
-  }, [processedIdeas, showToast]);
+  }, [processedIdeas, showToast, hasFeature, setUpgradePromptFeature, setShowUpgradePrompt]);
 
   const handleExportPDF = useCallback(() => {
+    // Export requires pro
+    if (!hasFeature('export')) {
+      setUpgradePromptFeature('export');
+      setShowUpgradePrompt(true);
+      setShowExportMenu(false);
+      return;
+    }
+
     try {
         const doc = new jsPDF();
         const pageWidth = doc.internal.pageSize.getWidth();
@@ -475,7 +573,7 @@ export default function App() {
         console.error("PDF Export Error", e);
         showToast("Failed to export PDF");
     }
-  }, [processedIdeas, showToast]);
+  }, [processedIdeas, showToast, hasFeature, setUpgradePromptFeature, setShowUpgradePrompt]);
 
   return (
     <div className="min-h-screen transition-colors duration-300 bg-gray-50 dark:bg-black text-neutral-900 dark:text-white selection:bg-red-900 selection:text-white flex flex-col relative">
@@ -514,6 +612,16 @@ export default function App() {
          </div>
       </div>
 
+      {/* License Modal */}
+      <LicenseModal isOpen={showLicenseModal} onClose={() => setShowLicenseModal(false)} />
+
+      {/* Upgrade Prompt */}
+      <UpgradePrompt
+        isOpen={showUpgradePrompt}
+        onClose={() => setShowUpgradePrompt(false)}
+        feature={upgradePromptFeature}
+      />
+
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white/95 dark:bg-black/95 backdrop-blur-md transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-24 relative flex items-center justify-between">
@@ -537,10 +645,41 @@ export default function App() {
           </div>
 
           {/* Right Actions */}
-          <div className="flex-1 flex items-center justify-end gap-6 text-sm">
-             <span className="hidden sm:inline text-neutral-500 font-mono text-xs tracking-wider">LOCAL AI ENABLED</span>
+          <div className="flex-1 flex items-center justify-end gap-4 sm:gap-6 text-sm">
+             {/* Pro Badge / Upgrade Button */}
+             {isPro ? (
+               <button
+                 onClick={() => setShowLicenseModal(true)}
+                 className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-yellow-500 to-yellow-600 text-black text-xs font-bold uppercase tracking-wider rounded-lg shadow-lg shadow-yellow-500/20 hover:shadow-yellow-500/40 transition-all hover:scale-105"
+               >
+                 <Crown size={14} />
+                 <span className="hidden sm:inline">Pro</span>
+               </button>
+             ) : (
+               <button
+                 onClick={() => setShowLicenseModal(true)}
+                 className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-red-600 to-red-700 text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-lg hover:shadow-red-500/30 transition-all hover:scale-105"
+               >
+                 <Crown size={14} />
+                 <span className="hidden sm:inline">Upgrade</span>
+               </button>
+             )}
+
              <div className="w-px h-4 bg-neutral-200 dark:bg-neutral-800 hidden sm:block"></div>
-             
+
+             {/* Remaining generations indicator for free users */}
+             {!isPro && (
+               <>
+                 <span className="hidden sm:inline text-neutral-500 font-mono text-xs tracking-wider">
+                   {remainingGenerations}/3 FREE
+                 </span>
+                 <div className="w-px h-4 bg-neutral-200 dark:bg-neutral-800 hidden sm:block"></div>
+               </>
+             )}
+
+             <span className="hidden lg:inline text-neutral-500 font-mono text-xs tracking-wider">LOCAL AI</span>
+             <div className="w-px h-4 bg-neutral-200 dark:bg-neutral-800 hidden lg:block"></div>
+
              <button onClick={toggleTheme} className="text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors" title="Toggle Theme">
                 {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
              </button>
@@ -549,7 +688,7 @@ export default function App() {
 
              <button onClick={startTour} className="text-neutral-400 hover:text-red-600 dark:hover:text-red-500 transition-colors flex items-center gap-2 group">
                 <HelpCircle size={16} className="group-hover:text-red-600 dark:group-hover:text-red-500" />
-                <span className="uppercase text-xs font-bold tracking-wider">Guide</span>
+                <span className="hidden sm:inline uppercase text-xs font-bold tracking-wider">Guide</span>
              </button>
           </div>
         </div>
@@ -968,5 +1107,14 @@ export default function App() {
         </div>
       </footer>
     </div>
+  );
+}
+
+// Wrap AppContent with LicenseProvider
+export default function App() {
+  return (
+    <LicenseProvider>
+      <AppContent />
+    </LicenseProvider>
   );
 }
