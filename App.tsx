@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { generateViralIdeas, analyzeAppIdea, refineUserIdea, generateAppConceptImage, setProgressCallback, preloadEngine, isEngineReady } from './services/webLLMService';
-import { AppIdea, AppCategory, DeepDiveAnalysis } from './types';
+import { generateViralIdeas, analyzeAppIdea, refineUserIdea, generateAppConceptImage, generateAppNames, generateMarketingCopy, generateMVPPlan, setProgressCallback, preloadEngine, isEngineReady } from './services/webLLMService';
+import { AppIdea, AppCategory, DeepDiveAnalysis, GeneratedAppNames, MarketingCopy, MVPPlan } from './types';
 import { IdeaCard } from './components/IdeaCard';
 import { AnalysisView } from './components/AnalysisView';
 import { ComparisonModal } from './components/ComparisonModal';
@@ -9,6 +9,9 @@ import { AdMobBanner } from './components/AdMobBanner';
 import { AdMobInterstitial } from './components/AdMobInterstitial';
 import { LicenseModal } from './components/LicenseModal';
 import { UpgradePrompt } from './components/UpgradePrompt';
+import { AppNameGenerator } from './components/AppNameGenerator';
+import { MarketingCopyWriter } from './components/MarketingCopyWriter';
+import { MVPFeaturePlanner } from './components/MVPFeaturePlanner';
 import { LicenseProvider, useLicense } from './contexts/LicenseContext';
 import { Rocket, Sparkles, RefreshCw, BarChart3, Info, Heart, Bookmark, Filter, ArrowUpDown, Scale, X, Activity, Loader2, HelpCircle, Share2, CheckCircle2, PenTool, Zap, Sun, Moon, Download, FileJson, FileText, ChevronDown, FileSpreadsheet, Crown } from 'lucide-react';
 import { jsPDF } from "jspdf";
@@ -65,6 +68,14 @@ function AppContent() {
   const [loadingAnalysis, setLoadingAnalysis] = useState(false);
   const [showTour, setShowTour] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Creative Tools State
+  const [generatedNames, setGeneratedNames] = useState<GeneratedAppNames | null>(null);
+  const [loadingNames, setLoadingNames] = useState(false);
+  const [marketingCopy, setMarketingCopy] = useState<MarketingCopy | null>(null);
+  const [loadingMarketingCopy, setLoadingMarketingCopy] = useState(false);
+  const [mvpPlan, setMvpPlan] = useState<MVPPlan | null>(null);
+  const [loadingMvpPlan, setLoadingMvpPlan] = useState(false);
 
   // Ad State
   const [showInterstitial, setShowInterstitial] = useState(false);
@@ -400,6 +411,74 @@ function AppContent() {
           setPendingAnalysisIdea(null);
       }
   }, [pendingAnalysisIdea, executeAnalysis]);
+
+  // Creative Tools Handlers
+  const handleGenerateNames = useCallback(async () => {
+    if (!selectedIdea) return;
+
+    // Pro feature check
+    if (!hasFeature('deep_analysis')) {
+      setUpgradePromptFeature('deep_analysis');
+      setShowUpgradePrompt(true);
+      return;
+    }
+
+    setLoadingNames(true);
+    const names = await generateAppNames(selectedIdea);
+    setGeneratedNames(names);
+    setLoadingNames(false);
+
+    if (names) {
+      showToast("App names generated!");
+    }
+  }, [selectedIdea, hasFeature, setUpgradePromptFeature, setShowUpgradePrompt, showToast]);
+
+  const handleGenerateMarketingCopy = useCallback(async () => {
+    if (!selectedIdea) return;
+
+    // Pro feature check
+    if (!hasFeature('deep_analysis')) {
+      setUpgradePromptFeature('deep_analysis');
+      setShowUpgradePrompt(true);
+      return;
+    }
+
+    setLoadingMarketingCopy(true);
+    const copy = await generateMarketingCopy(selectedIdea);
+    setMarketingCopy(copy);
+    setLoadingMarketingCopy(false);
+
+    if (copy) {
+      showToast("Marketing copy generated!");
+    }
+  }, [selectedIdea, hasFeature, setUpgradePromptFeature, setShowUpgradePrompt, showToast]);
+
+  const handleGenerateMVPPlan = useCallback(async () => {
+    if (!selectedIdea) return;
+
+    // Pro feature check
+    if (!hasFeature('deep_analysis')) {
+      setUpgradePromptFeature('deep_analysis');
+      setShowUpgradePrompt(true);
+      return;
+    }
+
+    setLoadingMvpPlan(true);
+    const plan = await generateMVPPlan(selectedIdea);
+    setMvpPlan(plan);
+    setLoadingMvpPlan(false);
+
+    if (plan) {
+      showToast("MVP plan generated!");
+    }
+  }, [selectedIdea, hasFeature, setUpgradePromptFeature, setShowUpgradePrompt, showToast]);
+
+  // Reset creative tools when idea changes
+  useEffect(() => {
+    setGeneratedNames(null);
+    setMarketingCopy(null);
+    setMvpPlan(null);
+  }, [selectedIdea?.id]);
 
   // Derived state for sorting and filtering
   const processedIdeas = useMemo(() => {
@@ -1000,12 +1079,50 @@ function AppContent() {
                         <div className="text-yellow-600 dark:text-yellow-500 font-bold uppercase text-sm tracking-wider">{selectedIdea.monetizationStrategy}</div>
                     </div>
                   </div>
-                  <AnalysisView 
-                    idea={selectedIdea} 
-                    analysis={analysis} 
+                  <AnalysisView
+                    idea={selectedIdea}
+                    analysis={analysis}
                     loading={loadingAnalysis}
                     onShare={handleShare}
                   />
+
+                  {/* Creative Tools Section - Pro Features */}
+                  {analysis && (
+                    <div className="mt-8 space-y-6">
+                      <div className="border-t border-neutral-200 dark:border-neutral-800 pt-8">
+                        <h3 className="text-sm font-bold text-neutral-400 mb-6 uppercase tracking-widest flex items-center gap-2">
+                          <Crown className="text-yellow-500" size={14} />
+                          Pro Creative Tools
+                        </h3>
+
+                        <div className="grid grid-cols-1 gap-6">
+                          {/* App Name Generator */}
+                          <AppNameGenerator
+                            idea={selectedIdea}
+                            names={generatedNames}
+                            loading={loadingNames}
+                            onGenerate={handleGenerateNames}
+                          />
+
+                          {/* Marketing Copy Writer */}
+                          <MarketingCopyWriter
+                            idea={selectedIdea}
+                            copy={marketingCopy}
+                            loading={loadingMarketingCopy}
+                            onGenerate={handleGenerateMarketingCopy}
+                          />
+
+                          {/* MVP Feature Planner */}
+                          <MVPFeaturePlanner
+                            idea={selectedIdea}
+                            plan={mvpPlan}
+                            loading={loadingMvpPlan}
+                            onGenerate={handleGenerateMVPPlan}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="h-[600px] flex flex-col items-center justify-center text-center p-8 border border-dashed border-neutral-300 dark:border-neutral-800 rounded-3xl bg-neutral-100/30 dark:bg-neutral-900/30">
