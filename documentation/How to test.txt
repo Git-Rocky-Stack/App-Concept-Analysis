@@ -1,0 +1,18 @@
+
+Summary - How to Test:
+Local Testing (do this first!)
+npm run dev
+
+Then open http://localhost:3000 in your browser.
+
+Deploy to Production
+Create PR: https://github.com/Git-Rocky-Stack/App-Concept-Analysis/pull/new/claude/migrate-to-github-pages-01GJVYuz1HX3F1hTFAygN9YX
+Merge to main
+Check Actions tab - watch the build/deploy progress
+Visit your site: https://git-rocky-stack.github.io/App-Concept-Analysis/
+What you'll see when testing:
+First visit: Model download overlay (~2GB, cached for future visits)
+Header: "Upgrade" button + "3/3 FREE" counter
+Clicking locked features: Upgrade prompt appears
+Entering test key (e.g., STGX-TEST-1234-ABCD): Unlocks all Pro features
+Want me to help with anything else? Like setting up your LemonSqueezy store URL or customizing the pricing/features?
