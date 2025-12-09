@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { generateViralIdeas, analyzeAppIdea, refineUserIdea, generateAppConceptImage, generateAppNames, generateMarketingCopy, generateMVPPlan, setProgressCallback, preloadEngine, isEngineReady } from './services/webLLMService';
+import { generateViralIdeas, analyzeAppIdea, refineUserIdea, generateAppConceptImage, generateAppNames, generateMarketingCopy, generateMVPPlan, setProgressCallback, preloadEngine, isEngineReady, isWebGPUAvailable, getInitError } from './services/webLLMService';
 import { AppIdea, AppCategory, DeepDiveAnalysis, GeneratedAppNames, MarketingCopy, MVPPlan } from './types';
 import { IdeaCard } from './components/IdeaCard';
 import { AnalysisView } from './components/AnalysisView';
@@ -54,6 +54,7 @@ function AppContent() {
   // WebLLM Model Loading State
   const [modelLoading, setModelLoading] = useState(!isEngineReady());
   const [modelProgress, setModelProgress] = useState("Initializing AI engine...");
+  const [modelError, setModelError] = useState<string | null>(null);
 
   const [mode, setMode] = useState<'generate' | 'validate'>('generate');
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
@@ -115,19 +116,36 @@ function AppContent() {
 
   // Initialize WebLLM Engine on app load
   useEffect(() => {
-    setProgressCallback((progress) => {
-      setModelProgress(progress);
-      if (progress.includes("ready")) {
-        setModelLoading(false);
-      }
-    });
+    const initializeEngine = async () => {
+      // First check WebGPU support
+      const webGPUSupported = await isWebGPUAvailable();
 
-    preloadEngine()
-      .then(() => setModelLoading(false))
-      .catch((err) => {
-        console.error("Failed to load AI model:", err);
-        setModelProgress("Failed to load AI model. Please refresh.");
+      if (!webGPUSupported) {
+        const error = getInitError() || "WebGPU not supported";
+        setModelError(error);
+        setModelProgress(error);
+        return;
+      }
+
+      setProgressCallback((progress) => {
+        setModelProgress(progress);
+        if (progress.includes("ready")) {
+          setModelLoading(false);
+        }
       });
+
+      try {
+        await preloadEngine();
+        setModelLoading(false);
+      } catch (err) {
+        console.error("Failed to load AI model:", err);
+        const errorMsg = getInitError() || (err instanceof Error ? err.message : "Unknown error");
+        setModelError(errorMsg);
+        setModelProgress(errorMsg);
+      }
+    };
+
+    initializeEngine();
   }, []);
 
   const toggleTheme = () => {
@@ -661,24 +679,69 @@ function AppContent() {
       <AdMobInterstitial isOpen={showInterstitial} onClose={handleInterstitialClose} />
 
       {/* WebLLM Model Loading Overlay */}
-      {modelLoading && (
+      {(modelLoading || modelError) && (
         <div className="fixed inset-0 z-[200] bg-black/95 flex flex-col items-center justify-center">
-          <div className="text-center max-w-md px-6">
-            <div className="w-20 h-20 mx-auto mb-8 relative">
-              <div className="absolute inset-0 border-4 border-red-600/30 rounded-full"></div>
-              <div className="absolute inset-0 border-4 border-transparent border-t-red-600 rounded-full animate-spin"></div>
-              <Sparkles className="absolute inset-0 m-auto text-red-600" size={28} />
-            </div>
-            <h2 className="text-2xl font-bold text-white mb-4 uppercase tracking-wider">Loading AI Engine</h2>
-            <p className="text-neutral-400 text-sm mb-6">
-              Downloading AI model to your browser. This only happens once and enables completely free, offline AI analysis.
-            </p>
-            <div className="bg-neutral-900 rounded-xl p-4 border border-neutral-800">
-              <p className="text-red-500 text-xs font-mono">{modelProgress}</p>
-            </div>
-            <p className="text-neutral-600 text-xs mt-6">
-              First load: ~2GB download | Subsequent visits: Instant
-            </p>
+          <div className="text-center max-w-lg px-6">
+            {modelError ? (
+              <>
+                {/* Error State */}
+                <div className="w-20 h-20 mx-auto mb-8 relative">
+                  <div className="absolute inset-0 border-4 border-red-600 rounded-full"></div>
+                  <X className="absolute inset-0 m-auto text-red-600" size={32} />
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-4 uppercase tracking-wider">AI Engine Unavailable</h2>
+                <div className="bg-red-900/30 border border-red-800 rounded-xl p-4 mb-6">
+                  <p className="text-red-400 text-sm font-mono">{modelError}</p>
+                </div>
+                <div className="bg-neutral-900 rounded-xl p-6 border border-neutral-800 text-left">
+                  <h3 className="text-white font-bold text-sm uppercase tracking-wider mb-3">Requirements:</h3>
+                  <ul className="text-neutral-400 text-sm space-y-2">
+                    <li className="flex items-start gap-2">
+                      <span className="text-yellow-500">•</span>
+                      <span><strong>Chrome 121+</strong> or <strong>Edge 121+</strong> (WebGPU enabled by default)</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-yellow-500">•</span>
+                      <span>A <strong>dedicated GPU</strong> (integrated GPUs may not work)</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-yellow-500">•</span>
+                      <span><strong>Updated GPU drivers</strong></span>
+                    </li>
+                  </ul>
+                  <div className="mt-4 pt-4 border-t border-neutral-800">
+                    <p className="text-neutral-500 text-xs">
+                      Try opening this page in Chrome or Edge on a desktop computer with a dedicated graphics card.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="mt-6 px-6 py-3 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold uppercase tracking-wider text-sm transition-all"
+                >
+                  Retry
+                </button>
+              </>
+            ) : (
+              <>
+                {/* Loading State */}
+                <div className="w-20 h-20 mx-auto mb-8 relative">
+                  <div className="absolute inset-0 border-4 border-red-600/30 rounded-full"></div>
+                  <div className="absolute inset-0 border-4 border-transparent border-t-red-600 rounded-full animate-spin"></div>
+                  <Sparkles className="absolute inset-0 m-auto text-red-600" size={28} />
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-4 uppercase tracking-wider">Loading AI Engine</h2>
+                <p className="text-neutral-400 text-sm mb-6">
+                  Downloading AI model to your browser. This only happens once and enables completely free, offline AI analysis.
+                </p>
+                <div className="bg-neutral-900 rounded-xl p-4 border border-neutral-800">
+                  <p className="text-red-500 text-xs font-mono">{modelProgress}</p>
+                </div>
+                <p className="text-neutral-600 text-xs mt-6">
+                  First load: ~2GB download | Subsequent visits: Instant
+                </p>
+              </>
+            )}
           </div>
         </div>
       )}

@@ -8,11 +8,43 @@ const MODEL_ID = "Llama-3.2-3B-Instruct-q4f16_1-MLC";
 let engine: webllm.MLCEngine | null = null;
 let initializationPromise: Promise<webllm.MLCEngine> | null = null;
 let initProgress: (progress: string) => void = () => {};
+let webGPUSupported: boolean | null = null;
+let initError: string | null = null;
+
+// Check WebGPU support
+const checkWebGPUSupport = async (): Promise<boolean> => {
+  if (webGPUSupported !== null) return webGPUSupported;
+
+  try {
+    if (!navigator.gpu) {
+      webGPUSupported = false;
+      initError = "WebGPU not supported. Please use Chrome 121+, Edge 121+, or enable WebGPU flags.";
+      return false;
+    }
+
+    const adapter = await navigator.gpu.requestAdapter();
+    if (!adapter) {
+      webGPUSupported = false;
+      initError = "WebGPU adapter not found. Your GPU may not be supported.";
+      return false;
+    }
+
+    webGPUSupported = true;
+    return true;
+  } catch (e) {
+    webGPUSupported = false;
+    initError = `WebGPU check failed: ${e instanceof Error ? e.message : 'Unknown error'}`;
+    return false;
+  }
+};
 
 // Allow external progress callback
 export const setProgressCallback = (callback: (progress: string) => void) => {
   initProgress = callback;
 };
+
+// Get initialization error if any
+export const getInitError = (): string | null => initError;
 
 // Initialize the WebLLM engine (singleton pattern)
 const getEngine = async (): Promise<webllm.MLCEngine> => {
@@ -21,6 +53,15 @@ const getEngine = async (): Promise<webllm.MLCEngine> => {
   if (initializationPromise) return initializationPromise;
 
   initializationPromise = (async () => {
+    // Check WebGPU support first
+    initProgress("Checking WebGPU support...");
+    const supported = await checkWebGPUSupport();
+
+    if (!supported) {
+      initProgress(initError || "WebGPU not supported");
+      throw new Error(initError || "WebGPU not supported");
+    }
+
     initProgress("Initializing AI engine...");
 
     const newEngine = new webllm.MLCEngine();
@@ -30,14 +71,25 @@ const getEngine = async (): Promise<webllm.MLCEngine> => {
       initProgress(`Loading AI model: ${percent}% - ${report.text}`);
     });
 
-    await newEngine.reload(MODEL_ID);
-    engine = newEngine;
-    initProgress("AI engine ready!");
-
-    return engine;
+    try {
+      await newEngine.reload(MODEL_ID);
+      engine = newEngine;
+      initProgress("AI engine ready!");
+      return engine;
+    } catch (e) {
+      const errorMsg = e instanceof Error ? e.message : 'Unknown error';
+      initError = `Model load failed: ${errorMsg}`;
+      initProgress(initError);
+      throw e;
+    }
   })();
 
   return initializationPromise;
+};
+
+// Check if WebGPU is available
+export const isWebGPUAvailable = async (): Promise<boolean> => {
+  return checkWebGPUSupport();
 };
 
 // Helper to extract JSON from LLM response
