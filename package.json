@@ -10,11 +10,11 @@
   },
   "dependencies": {
     "@mlc-ai/web-llm": "^0.2.78",
+    "jspdf": "^3.0.4",
     "lucide-react": "^0.556.0",
-    "recharts": "^3.5.1",
-    "react-dom": "^19.2.1",
     "react": "^19.2.1",
-    "jspdf": "^2.5.1"
+    "react-dom": "^19.2.1",
+    "recharts": "^3.5.1"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
