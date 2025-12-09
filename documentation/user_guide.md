@@ -6,25 +6,51 @@ Welcome to Strategia-X. This guide will help you navigate the interface and util
 
 ## Getting Started
 
-### 1. Onboarding
-When you first launch the app, an interactive tour will highlight key areas of the interface.
+### 1. First-Time Setup
+When you first launch the app, the AI model will download to your browser (approximately 2GB). This only happens once - subsequent visits will load instantly. During this time, you'll see a loading screen with progress updates.
+
+### 2. Onboarding Tour
+An interactive tour will highlight key areas of the interface:
 *   **Target Market:** Where you select categories.
 *   **Initialize:** The main button to start AI generation.
 *   **Data Tabs:** Switching between Live results and Saved ideas.
 *   **Filters:** Sorting tools.
 
-### 2. Interface Overview
-*   **Header:** Contains Theme toggle (Sun/Moon), Help Guide, and Status indicators.
+### 3. Interface Overview
+*   **Header:** Contains Theme toggle (Sun/Moon), Help Guide, Pro/Upgrade badge, and Status indicators.
 *   **Mode Switcher:** Located centrally below the main title. Switch between:
     *   **Market Generator:** Let AI invent ideas for you.
     *   **Validate Concept:** Input your own ideas for AI refinement.
 
 ---
 
+## Free vs Pro Features
+
+### Free Tier
+*   3 generations per day
+*   3 saved ideas maximum
+*   Basic idea generation
+*   View idea cards
+
+### Pro Tier (Upgrade Required)
+*   Unlimited generations
+*   Unlimited saved ideas
+*   Deep Dive Analysis (SWOT, growth projections)
+*   AI Concept Art generation
+*   Comparison Tool (up to 3 ideas)
+*   Export (JSON, CSV, PDF)
+*   **App Name Generator** - Generate 10 creative app names
+*   **Marketing Copy Writer** - App Store descriptions, taglines, social posts
+*   **MVP Feature Planner** - Prioritized feature roadmap
+
+To upgrade, click the "Upgrade" button in the header and enter your license key.
+
+---
+
 ## Workflow: Generating Ideas
 
 1.  **Select Category:** Choose a category from the list (e.g., "Hyper-Casual Game", "Social Utility"). Select "All" for a broad mix.
-2.  **Generate:** Click the **"Generate Analysis"** button. The AI will take a few seconds to process market trends and output 3 high-potential ideas.
+2.  **Generate:** Click the **"Generate Analysis"** button. The AI will take a few seconds to process and output 3 high-potential ideas.
 3.  **Review Cards:** Each result card displays:
     *   **Title & Tagline.**
     *   **Virality Score:** How likely users are to invite others.
@@ -42,7 +68,7 @@ When you first launch the app, an interactive tour will highlight key areas of t
 
 ---
 
-## Workflow: Deep Dive Analysis
+## Workflow: Deep Dive Analysis (Pro)
 
 To see the financial future of an idea:
 1.  **Click "Analyze Diagnostics"** on any idea card.
@@ -56,7 +82,43 @@ To see the financial future of an idea:
 
 ---
 
-## Visualizing Concepts
+## Pro Creative Tools
+
+Once you've run a Deep Dive Analysis, three powerful Pro tools become available:
+
+### App Name Generator
+*   Generate 10 creative app names in different styles:
+    *   Playful/Fun - Catchy, memorable names
+    *   Professional/Corporate - Trustworthy, sleek names
+    *   Techy/Modern - Innovative, cutting-edge names
+    *   Minimalist - Short, simple 1-2 syllable names
+    *   Creative/Abstract - Unique, brandable names
+*   Each name shows simulated domain availability
+*   One-click copy to clipboard
+
+### Marketing Copy Writer
+*   Generate complete marketing materials:
+    *   **App Store Description** - Short (80 char) and full versions
+    *   **5 Catchy Taglines** - Ready-to-use slogans
+    *   **Social Media Posts** - Twitter, Instagram, and LinkedIn
+    *   **Press Release** - Short paragraph for announcements
+*   Expandable sections for easy navigation
+*   Copy buttons for each piece of content
+
+### MVP Feature Planner
+*   Get a prioritized feature roadmap using MoSCoW method:
+    *   **Must Have** - Core features essential for MVP launch
+    *   **Should Have** - Important but not critical features
+    *   **Nice to Have** - Future enhancements
+*   Each feature includes:
+    *   Effort estimate (Low/Medium/High)
+    *   Impact rating (Low/Medium/High)
+*   Suggested tech stack
+*   Estimated development timeline
+
+---
+
+## Visualizing Concepts (Pro)
 
 1.  Hover over the colored placeholder image on any idea card.
 2.  Click the **"Generate Concept Art"** button.
@@ -65,7 +127,7 @@ To see the financial future of an idea:
 
 ---
 
-## Comparison Tool
+## Comparison Tool (Pro)
 
 When deciding between multiple good ideas:
 1.  Click the **Scale Icon** (Balance scale) on the top right of an idea card.
@@ -81,11 +143,14 @@ When deciding between multiple good ideas:
 ### Saving
 *   Click the **Heart Icon** on any card to save it.
 *   Access saved ideas by clicking the **"Saved"** tab above the list.
+*   Free users: Limited to 3 saved ideas.
+*   Pro users: Unlimited saves.
 
-### Exporting
+### Exporting (Pro)
 1.  Click the **"Export"** button near the filter controls.
 2.  **Export JSON:** Useful for developers or data backup.
-3.  **Export PDF:** Generates a clean, professional report suitable for printing or emailing to stakeholders.
+3.  **Export CSV:** Spreadsheet-compatible format for analysis.
+4.  **Export PDF:** Generates a clean, professional report suitable for printing or emailing to stakeholders.
 
 ### Sharing
 *   Click the **Share Icon** on any card or inside the Analysis view.
@@ -93,7 +158,20 @@ When deciding between multiple good ideas:
 
 ---
 
+## License Activation
+
+1.  Click the **"Upgrade"** button in the header (or **"Pro"** badge if already activated).
+2.  Purchase a license from our checkout page.
+3.  Enter your license key in the format: `XXXX-XXXX-XXXX-XXXX` or similar.
+4.  Click **"Activate License"**.
+5.  Your Pro status is saved locally and persists across sessions.
+
+---
+
 ## Troubleshooting
 
-*   **Generation Fails:** Ensure you have a valid internet connection. The AI requires network access.
-*   **Ad Blockers:** If you are testing the ad functionality in a browser, ensure ad blockers are disabled, as they might interfere with the simulation components.
+*   **AI Model Won't Load:** Ensure you have a stable internet connection and sufficient storage (~2GB). Try refreshing the page.
+*   **Generation Fails:** The local AI may need a moment to warm up. Try again after a few seconds.
+*   **Features Locked:** Ensure you have an active Pro license. Click the Upgrade button to check your status.
+*   **Theme Issues:** Toggle the theme using the Sun/Moon icon in the header.
+*   **Data Not Saving:** Check that your browser allows localStorage. Private/Incognito mode may prevent data persistence.
